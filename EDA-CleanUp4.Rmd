@@ -1,0 +1,602 @@
+---
+title: "Cleaning up"
+author: "Maha Mapara"
+date: "11/14/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(caret)
+library(lubridate)
+library(lattice)
+library(gridExtra)
+library(GGally)
+library(ISLR)
+library(tidyr)
+library(readxl)
+
+#install.packages("naniar")
+library(naniar)
+```
+
+
+```{r}
+MassMutualTestJumpStartDataAnalysis20191010 <- read_excel("MassMutualTestJumpStartDataAnalysis20191010.xlsx")
+```
+
+```{r}
+admissions <- MassMutualTestJumpStartDataAnalysis20191010
+```
+
+
+```{r}
+#rename columns
+names(admissions)[11] <- "application"
+
+names(admissions)[14] <- "accept_ED_as_RD"
+names(admissions)[18] <- "final_app_rating"
+
+names(admissions)[19] <- "citizenship"
+
+names(admissions)[21] <- "int_stu"
+names(admissions)[22] <- "hispanic"
+names(admissions)[23] <- "american_indian"
+names(admissions)[24] <- "asian_american"
+names(admissions)[25] <- "african_american"
+names(admissions)[26] <- "pacific_islander_american"
+names(admissions)[27] <- "dom_white"
+
+names(admissions)[29] <- "first_gen"
+
+names(admissions)[39] <- "legacy"
+names(admissions)[43] <- "sib_applied"
+
+names(admissions)[44] <- "sat_considered"
+names(admissions)[45] <- "sat_comp"
+names(admissions)[46] <- "sat_verbal"
+names(admissions)[47] <- "sat_math"
+
+names(admissions)[48] <- "act_considered"
+names(admissions)[49] <- "act_comp"
+names(admissions)[50] <- "act_math"
+names(admissions)[51] <- "act_reading"
+names(admissions)[52] <- "act_english"
+names(admissions)[53] <- "act_writing"
+names(admissions)[54] <- "act_science"
+
+names(admissions)[55] <- "comp_standardized_test_percentile"
+
+names(admissions)[56] <- "toefl"
+names(admissions)[57] <- "ielts"
+
+names(admissions)[61] <- "acad_int_count"
+
+names(admissions)[62] <- "fine_arts"
+names(admissions)[63] <- "humanities"
+names(admissions)[64] <- "languages"
+names(admissions)[65] <- "stem"
+names(admissions)[66] <- "social_sciences"
+
+names(admissions)[67] <- "recruited_athlete"
+
+names(admissions)[70] <- "hs_name"
+names(admissions)[72] <- "hs_geomarket"
+names(admissions)[73] <- "hs_state"
+names(admissions)[74] <- "hs_us_zipcode"
+names(admissions)[75] <- "hs_country"
+names(admissions)[76] <- "hs_grad_year"
+  
+
+names(admissions)[80] <- "hs_gpa"
+
+names(admissions)[81] <- "home_geomarket"
+names(admissions)[82] <- "home_city"
+names(admissions)[83] <- "home_state"
+names(admissions)[84] <- "home_country"
+
+names(admissions)[85] <- "campus_tour"
+names(admissions)[86] <- "info_session"
+names(admissions)[87] <- "college_fair"
+names(admissions)[88] <- "sisters_event"
+names(admissions)[89] <- "attended_focus_session"
+names(admissions)[90] <- "school_visit_day"
+names(admissions)[91] <- "third_party_interview"
+names(admissions)[92] <- "community_org_visit"
+names(admissions)[93] <- "campus_visit_day"
+names(admissions)[94] <- "gathering_event"
+names(admissions)[95] <- "student_lunch_event"
+names(admissions)[96] <- "total_engagement"
+
+names(admissions)[97] <- "total_income"
+names(admissions)[98] <- "sfs_fam_cont"
+names(admissions)[103] <- "financial_aid"
+names(admissions)[104] <- "orig_need"
+names(admissions)[116] <- "cent_merit"
+names(admissions)[117] <- "posse_applicant"
+names(admissions)[118] <- "posse_admit"
+
+names(admissions)[132] <- "pre_app_mess_open"
+names(admissions)[133] <- "pre_app_mess_sent"
+names(admissions)[134] <- "PostApplicationMessagesSent"
+
+names(admissions)[136] <- "deposit_indicator"
+```
+
+
+```{r}
+
+#library(naniar)
+
+####remove all NA rows in race background: remove cell where 0.28 and 0.05 hispanic, 0.68 with white, american indian with 0.04, asian with 0.17, african with 0.11, pacific islander with 0.01.
+admissions <- admissions %>%
+  replace_with_na(replace = list(hispanic= c(0.28, 0.05),
+                             dom_white = c(0.68),
+                             american_indian = c(0.04),
+                             asian_american = c(0.17),
+                             african_american = c(0.11),
+                             pacific_islander_american = c(0.01)))
+
+##are we not accounting for students who have more than once race?
+#they go into color even if white and another race(s)
+```
+
+#make all dom POC in one column:hispanic, american_indian, asian_american, african_american, pacific_islander_american
+
+```{r}
+admissions$dom_stu_of_colour <- admissions$hispanic+ admissions$american_indian+ admissions$asian_american+ admissions$african_american+ admissions$pacific_islander_american
+
+```
+
+subset admissions data frame to a smaller one with all variable pertaining to application (as outlined in google doc)
+
+```{r}
+application <- admissions[c(11,19,137,27,21:26,45:47,49:57,62:67,70,72:76,81:96,133,132)]
+View(application)
+```
+
+Descriptive Stats-all
+```{r}
+summary(application)
+```
+
+
+```{r}
+test_stats <- application %>% 
+  filter(application == 1)
+nrow(test_stats)
+
+test_stats <- application %>% 
+  filter(application == 1 & recruited_athlete == 1)
+nrow(test_stats)
+
+test_stats <- application %>% 
+  filter(application == 1 & recruited_athlete == 0)
+nrow(test_stats)
+#recruited_athlete <- application %>%
+#   select(recruited_athlete)
+```
+
+
+```{r}
+(1271/22017)*100
+
+(20746/22017)*100
+```
+
+So out of the 22017 students that applie to Mount Holyoke, 5.77% were recruited athletes, while 94.23% were not recruited athletes.
+
+```{r}
+test_stats <- application %>% 
+  filter(application == 0)
+nrow(test_stats)
+
+test_stats <- application %>% 
+  filter(application == 0 & recruited_athlete == 1)
+nrow(test_stats)
+
+test_stats <- application %>% 
+  filter(application == 0 & recruited_athlete == 0)
+nrow(test_stats)
+
+```
+
+Out of the 340520 stduents that didn't apply, none were recruited athletes.
+
+```{r}
+test_stats <- application %>% 
+  filter(application == 1)
+nrow(test_stats)
+
+summary(test_stats)
+```
+
+SAT and ACT score spread (means are above):
+
+```{r}
+qplot(application$sat_comp, geom="histogram")
+
+qplot(application$act_comp, geom="histogram")
+```
+
+Total engagement:
+
+-using logistic regression to see which ones are significant
+
+```{r}
+campus_tour <- glm(application ~ campus_tour, data = application, family = binomial)
+summary(campus_tour)
+```
+
+```{r}
+info_session <- glm(application ~ info_session, data = application, family = binomial)
+summary(info_session)
+```
+
+```{r}
+college_fair <- glm(application ~ college_fair, data = application, family = binomial)
+summary(college_fair)
+```
+
+```{r}
+sisters_event <- glm(application ~ sisters_event, data = application, family = binomial)
+summary(sisters_event)
+```
+
+```{r}
+attended_focus_session <- glm(application ~ attended_focus_session, data = application, family = binomial)
+summary(attended_focus_session)
+```
+
+```{r}
+school_visit_day <- glm(application ~ school_visit_day, data = application, family = binomial)
+summary(school_visit_day)
+```
+
+```{r}
+third_party_interview <- glm(application ~ third_party_interview, data = application, family = binomial)
+summary(third_party_interview)
+```
+
+```{r}
+comm_org_visit <- glm(application ~ community_org_visit, data = application, family = binomial)
+summary(comm_org_visit)
+```
+
+```{r}
+campus_visit_day <- glm(application ~ campus_visit_day, data = application, family = binomial)
+summary(campus_visit_day)
+```
+
+```{r}
+gathering_event <- glm(application ~ gathering_event, data = application, family = binomial)
+summary(gathering_event)
+```
+
+```{r}
+student_lunch_event <- glm(application ~ student_lunch_event, data = application, family = binomial)
+summary(student_lunch_event)
+```
+
+```{r}
+qplot(test_stats$total_engagement, geom="histogram", bins = 30)
+
+ggplot(test_stats, aes(x=total_engagement, y=application)) + 
+  geom_point()
+
+ggplot(test_stats, aes(x=application, y=total_engagement)) + 
+  geom_boxplot()
+```
+
+High School
+```{r}
+test_stats <- application %>% 
+  filter(application == 1)
+hs <- application[c(1,29,30)]
+hs <- hs %>%
+  filter(application == 1)
+View(hs)
+```
+
+#Transform all to lowercase, change '&' to 'and' , 'sch' to 'school'for hs_name
+```{r}
+test_stats$hs_name <- tolower(test_stats$hs_name)
+
+chartr(old = "&", new = "and", test_stats$hs_name)
+chartr(old = "sch", new = "school", test_stats$hs_name)
+chartr(old = "karchi", new = "karachi", test_stats$hs_name)
+```
+
+#tells me how many times a particlar HS appears
+```{r}
+count_for_each_hs <- table(test_stats$hs_name)
+#View(count_for_each_hs)
+```
+
+
+```{r}
+summary(count_for_each_hs)
+max(count_for_each_hs)
+min(count_for_each_hs)
+
+```
+
+```{r}
+count_for_each_hs <- as.data.frame(count_for_each_hs) #convert to a data frame
+
+#change col names
+names(count_for_each_hs)[1] <- "hs_name"
+names(count_for_each_hs)[2] <- "num_of_applicants"
+
+```
+
+
+
+```{r}
+#schools with less than 15 applicants
+hs_less_15 <- count_for_each_hs %>% 
+  filter(num_of_applicants < 15)
+
+
+#schools with 15-20 applicants
+hs_15_20 <- count_for_each_hs %>% 
+  filter(num_of_applicants >= 15 & num_of_applicants<= 20)
+
+#schools with greater than 20 and less than 30
+hs_20_30 <- count_for_each_hs %>% 
+  filter(num_of_applicants > 20 & num_of_applicants <= 30)
+
+#school with greater than 30 applicants
+hs_over_30 <- count_for_each_hs %>% 
+  filter(num_of_applicants > 30)
+
+#total number/count and summary in each of the three frequency categories
+nrow(hs_less_15)
+summary(hs_less_15)
+
+nrow(hs_15_20)
+summary(hs_15_20)
+
+nrow(hs_20_30)
+summary(hs_20_30)
+
+nrow(hs_over_30)
+summary(hs_over_30)
+```
+
+do a bar graph with <15, 15-20, 21-30, >30
+
+for this: data frame will have 3 columns= hs_name, no. of apps, app. threshold (change the counts_for_each_hs df)
+
+```{r}
+# count_for_each_hs$num_app_thresholds <- NA
+# 
+# #if num_of_applicants < 15, num_app_thresholds should be less than 15
+# for (i in (1 : 4982)){
+#   
+#   if (count_for_each_hs$num_of_applicants < 15){
+#     count_for_each_hs$num_app_thresholds <- 'less than 15'
+#     }else if(count_for_each_hs$num_of_applicants >= 15 & count_for_each_hs$num_of_applicants <= 20){
+#       count_for_each_hs$num_app_thresholds <- '15 to 20 applicants'
+#       }else if(count_for_each_hs$num_of_applicants > 20 & count_for_each_hs$num_of_applicants <= 30){
+#         count_for_each_hs$num_app_thresholds <- '21 to 30 applicants'
+#         }else{
+#           count_for_each_hs$num_app_thresholds <- 'greater than 30 applicants'
+#       }
+#     
+# }
+  
+#error is that the condition has length > 1 and only the first element will be used. so it's putting less than 15 for all, even when not < 15
+
+#figure out how to fix this
+
+#in the mean time: for each app threshold df, add the new column of NAs, and assign those strings. then r bind all the df's
+
+hs_less_15$num_app_thresholds <- NA
+hs_less_15$num_app_thresholds <- 'less than 15'
+
+hs_15_20$num_app_thresholds <- NA
+hs_15_20$num_app_thresholds <- '15 to 20 applicants'
+
+hs_20_30$num_app_thresholds <- NA
+hs_20_30$num_app_thresholds <- '21 to 30 applicants'
+  
+hs_over_30$num_app_thresholds <- NA
+hs_over_30$num_app_thresholds <- 'greater than 30 applicants'
+
+count_with_thresholds <- rbind(hs_less_15, hs_15_20)
+count_with_thresholds <- rbind(count_with_thresholds, hs_20_30)
+count_with_thresholds <- rbind(count_with_thresholds, hs_over_30)
+
+View(count_with_thresholds)
+
+```
+
+
+
+
+```{r}
+#ggplot(data = count_for_each_hs, aes(x = num_of_applicants, y = hs_name)) + geom_col()
+
+tail(count_for_each_hs)
+
+```
+
+```{r}
+ggplot(count_with_thresholds, aes(num_app_thresholds,num_of_applicants))+
+  geom_col()
+```
+
+Going back to SAT scores
+```{r}
+test_stats <- application %>% 
+  filter(application == 1)#to make sure app == 1
+
+SAT_count <- table(test_stats$sat_comp)
+SAT_count <- as.data.frame(SAT_count)
+
+names(SAT_count)[1] <- "sat_score"
+names(SAT_count)[2] <- "num_of_applicants"
+
+#sat_score was a factor and changed it to number
+SAT_count$sat_score <- as.numeric(levels(SAT_count$sat_score))[SAT_count$sat_score]
+
+lowSAT <- SAT_count %>%
+  filter(sat_score < 1400)
+
+highSAT <- SAT_count %>%
+  filter(sat_score >= 1400)
+
+lowSAT$label <- NA
+lowSAT$label <- '< 1400'
+
+highSAT$label <- NA
+highSAT$label <- '>= 1400'
+
+SAT_count <- rbind(lowSAT, highSAT)
+
+ggplot(SAT_count, aes(label,num_of_applicants))+
+  geom_col()
+
+#View(SAT_count)
+# SAT <- test_stats %>%
+#   filter(sat_comp >= 1400)
+
+```
+
+```{r}
+pre_app_messages <- test_stats %>%
+  select(application, pre_app_mess_sent, pre_app_mess_open)
+
+mess_sent_count <- table(test_stats$pre_app_mess_sent)
+mess_sent_count <- as.data.frame(mess_sent_count)
+names(mess_sent_count)[1] <- "num_of_messages_sent"
+names(mess_sent_count)[2] <- "frequency"
+
+mess_open_count <- table(test_stats$pre_app_mess_open)
+mess_open_count <- as.data.frame(mess_open_count)
+names(mess_open_count)[1] <- "num_of_messages_opened"
+names(mess_open_count)[2] <- "frequency"
+##
+mess_sent_count$num_of_messages_sent <-
+  as.numeric(levels(mess_sent_count$num_of_messages_sent))[mess_sent_count$num_of_messages_sent]
+
+mess_open_count$num_of_messages_opened <-
+  as.numeric(levels(mess_open_count$num_of_messages_opened))[mess_open_count$num_of_messages_opened]
+
+##
+
+mess_sent_lesseq7 <- mess_sent_count %>%
+  filter(num_of_messages_sent <= 7)
+
+mess_sent_8to15 <- mess_sent_count %>%
+  filter(num_of_messages_sent > 7 & num_of_messages_sent <= 15)
+
+mess_sent_16to23 <- mess_sent_count %>%
+  filter(num_of_messages_sent > 15 & num_of_messages_sent <= 23)
+
+mess_sent_gretereq24 <-  mess_sent_count %>%
+  filter(num_of_messages_sent >= 24)
+
+mess_sent_lesseq7$label <- NA
+mess_sent_lesseq7$label <- 'less than or equal to 7'
+
+mess_sent_8to15$label <- NA
+mess_sent_8to15$label <- '8 to 15'
+
+mess_sent_16to23$label <- NA
+mess_sent_16to23$label <- '16 to 23'
+
+mess_sent_gretereq24$label <- NA
+mess_sent_gretereq24$label <- 'greater than or equal to 24'
+
+mess_sent_count <- rbind(mess_sent_lesseq7, mess_sent_8to15)
+mess_sent_count <- rbind(mess_sent_count, mess_sent_16to23)
+mess_sent_count <- rbind(mess_sent_count, mess_sent_gretereq24)
+##
+
+mess_open_less7 <- mess_open_count %>%
+  filter(num_of_messages_opened < 7)
+
+# mess_open_2to7 <- mess_open_count %>%
+#   filter(num_of_messages_opened > 1 & num_of_messages_opened <= 7)
+
+mess_open_7to15 <- mess_open_count %>%
+  filter(num_of_messages_opened >= 7 & num_of_messages_opened <= 15)
+
+mess_open_morethan15 <- mess_open_count %>%
+  filter(num_of_messages_opened > 15)
+
+mess_open_less7$label <- NA
+mess_open_less7$label <- 'less than 7'
+
+mess_open_7to15$label <- NA
+mess_open_7to15$label <- '7 to 15'
+
+mess_open_morethan15$label <- NA
+mess_open_morethan15$label <- 'greater than 15'
+
+mess_open_count <- rbind(mess_open_less7, mess_open_7to15)
+mess_open_count <- rbind(mess_open_count, mess_open_morethan15)
+
+#mess_open_count <- rbind(mess_open_count, mess_open_morethan15)
+##
+
+ggplot(mess_sent_count, aes(label,num_of_messages_sent))+
+  geom_col()
+
+ggplot(mess_open_count, aes(label,num_of_messages_opened))+
+  geom_col()
+
+```
+
+for ineractions and non-linearity
+```{r}
+#use for interactions
+
+# ggplot(data = bike, mapping = aes(x = mnth, y = cnt, color = factor(workingday))) + 
+#   geom_point() +
+#   geom_smooth()
+# 
+# ggplot(data = bike, mapping = aes(x = factor(mnth), y = cnt, color = factor(workingday))) + 
+#   geom_boxplot()
+
+```
+
+
+```{r}
+
+#install.packages("epiDisplay")
+
+# library(epiDisplay)
+# 
+# par(mar=c(1,1,1,1))
+# 
+# tab1(test_stats$hs_name, sort.group = "decreasing", cum.percent = TRUE)
+```
+
+```{r}
+# install.packages("summarytools")
+# library(summarytools)
+# summarytools::freq(test_stats$hs_name, order = "freq")
+```
+
+
+##
+References:
+https://www.statmethods.net/management/subset.html
+
+https://www.statmethods.net/stats/descriptives.html
+
+https://dabblingwithdata.wordpress.com/2017/12/20/my-favourite-r-package-for-frequency-tables/
+
+https://bradleyboehmke.github.io/tutorials/manipulation_base_r
+
+http://rprogramming.net/r-data-manipulation/
+
