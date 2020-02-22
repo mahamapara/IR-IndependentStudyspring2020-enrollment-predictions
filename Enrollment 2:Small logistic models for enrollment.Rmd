@@ -1,0 +1,75 @@
+---
+title: "Enrollment2"
+author: "Maha Mapara"
+date: "2/21/2020"
+output: html_document
+---
+
+Summary and commit message:
+
+small logistic regression models per most highly correlated variable and a larger one that combines them
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+summary(glm(Enroll ~ total_loans_awarded + HighYieldFeederHS + final_app_rating + total_engagement_pre_app +toefl + post_app_mess_sent + post_app_mess_open , data = enrollment, family = binomial, maxit = 100))
+
+
+#removed inst_grant, total_grant mhc_preview_day, sat_verbal due to "not defined because of singularities" issue
+```
+
+```{r}
+summary(glm(Enroll ~ total_loans_awarded, data = enrollment, family = binomial))
+```
+```{r}
+summary(glm(Enroll ~ total_grants_awarded, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ total_inst_grant, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ HighYieldFeederHS, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ final_app_rating, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ total_engagement_pre_app, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ toefl, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ post_app_mess_sent, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ post_app_mess_open, data = enrollment, family = binomial))
+```
+```{r}
+summary(glm(Enroll ~ mhc_preview_day, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ sat_verbal, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ legacy, data = enrollment, family = binomial))
+```
+
+```{r}
+summary(glm(Enroll ~ mhc_preview_day*total_engagement_pre_app, data = enrollment, family = binomial))
+```
+```{r}
+summary(glm(Enroll ~ mhc_showcase_event, data = enrollment, family = binomial))
+```
+
