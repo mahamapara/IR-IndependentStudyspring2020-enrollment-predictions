@@ -1,0 +1,366 @@
+---
+title: "Enrollment clean up and plots"
+author: "Maha Mapara"
+date: "2/14/2020"
+output: html_document
+---
+
+Summary and commit messgae: 
+
+Renamed columns, created dom_stu_of_color(not working), created enrollment dataframe with all variables imp for enrollment (only RD and up to 2019), created enrolled with Enroll == 1, many plots for correlations
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+logistic regression, high yield, low yield, insitutional grant/1000
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(caret)
+library(lubridate)
+library(lattice)
+library(gridExtra)
+library(GGally)
+library(ISLR)
+library(tidyr)
+library(readxl)
+
+#install.packages("naniar")
+library(naniar)
+```
+
+```{r}
+#MassMutualTestJumpStartDataAnalysis20191010 <- read_excel("MassMutualTestJumpStartDataAnalysis20191010.xlsx")
+```
+
+```{r}
+#admissions <- MassMutualTestJumpStartDataAnalysis20191010
+
+admissions <-InqMMJumpStartDataAnalysis20200128_1_
+```
+
+
+```{r}
+#rename columns
+names(admissions)[9] <- "original_app_plan"
+names(admissions)[11] <- "application"
+
+names(admissions)[14] <- "accept_ED_as_RD"
+names(admissions)[18] <- "final_app_rating"
+
+names(admissions)[19] <- "citizenship"
+
+names(admissions)[21] <- "int_stu"
+names(admissions)[22] <- "hispanic"
+names(admissions)[23] <- "american_indian"
+names(admissions)[24] <- "asian_american"
+names(admissions)[25] <- "african_american"
+names(admissions)[26] <- "pacific_islander_american"
+names(admissions)[27] <- "dom_white"
+
+names(admissions)[29] <- "first_gen"
+
+names(admissions)[39] <- "legacy"
+names(admissions)[43] <- "sib_applied"
+
+names(admissions)[44] <- "sat_considered"
+names(admissions)[45] <- "sat_comp"
+names(admissions)[46] <- "sat_verbal"
+names(admissions)[47] <- "sat_math"
+
+names(admissions)[48] <- "act_considered"
+names(admissions)[49] <- "act_comp"
+names(admissions)[50] <- "act_math"
+names(admissions)[51] <- "act_reading"
+names(admissions)[52] <- "act_english"
+names(admissions)[53] <- "act_writing"
+names(admissions)[54] <- "act_science"
+
+names(admissions)[55] <- "comp_standardized_test_percentile"
+
+names(admissions)[56] <- "toefl"
+names(admissions)[57] <- "ielts"
+
+names(admissions)[61] <- "acad_int_count"
+
+names(admissions)[62] <- "fine_arts"
+names(admissions)[63] <- "humanities"
+names(admissions)[64] <- "languages"
+names(admissions)[65] <- "stem"
+names(admissions)[66] <- "social_sciences"
+
+names(admissions)[67] <- "recruited_athlete"
+
+names(admissions)[70] <- "hs_name"
+names(admissions)[72] <- "hs_geomarket"
+names(admissions)[73] <- "hs_state"
+names(admissions)[74] <- "hs_us_zipcode"
+names(admissions)[75] <- "hs_country"
+names(admissions)[76] <- "hs_grad_year"
+  
+
+names(admissions)[80] <- "hs_gpa"
+
+names(admissions)[81] <- "home_geomarket"
+names(admissions)[82] <- "home_city"
+names(admissions)[83] <- "home_state"
+names(admissions)[84] <- "home_country"
+
+names(admissions)[85] <- "campus_tour"
+names(admissions)[86] <- "info_session"
+names(admissions)[87] <- "college_fair"
+names(admissions)[88] <- "sisters_event"
+names(admissions)[89] <- "attended_focus_session"
+names(admissions)[90] <- "school_visit_day"
+names(admissions)[91] <- "third_party_interview"
+names(admissions)[92] <- "community_org_visit"
+names(admissions)[93] <- "campus_visit_day"
+names(admissions)[94] <- "gathering_event"
+names(admissions)[95] <- "student_lunch_event"
+names(admissions)[96] <- "total_engagement_pre_app"
+
+names(admissions)[97] <- "total_income"
+names(admissions)[98] <- "sfs_fam_contribution"
+names(admissions)[102] <- "sfs_inst_grant"
+names(admissions)[103] <- "financial_aid"
+names(admissions)[104] <- "orig_need"
+names(admissions)[108] <- "total_inst_grant_cofhe"
+names(admissions)[112] <- "pell_grant_offered"
+names(admissions)[114] <- "loan_flag_cofhe"
+names(admissions)[115] <- "loan_value_cofhe"
+names(admissions)[116] <- "21_cent_merit"
+names(admissions)[117] <- "posse_applicant"
+names(admissions)[118] <- "posse_admit"
+names(admissions)[119] <- "total_inst_grant" #need and non-need
+names(admissions)[120] <- "total_grants_awarded" #all grants from all sources
+names(admissions)[121] <- "total_loans_awarded"
+
+names(admissions)[124] <- "attending_instead"
+names(admissions)[125] <- "native_language"
+
+names(admissions)[128] <- "deposit_indicator"
+names(admissions)[131] <- "all_mess_sent"
+names(admissions)[132] <- "all_mess_open"
+names(admissions)[133] <- "pre_app_mess_open"
+names(admissions)[134] <- "pre_app_mess_sent"
+names(admissions)[135] <- "post_app_mess_sent"
+names(admissions)[136] <- "post_app_mess_open"
+
+names(admissions)[138] <- "athletic_interest"
+names(admissions)[139] <- "application_created"
+names(admissions)[140] <- "deposit_received_date"
+names(admissions)[143] <- "institute_attending_instead"
+names(admissions)[144] <- "2_or_4_year"
+names(admissions)[145] <- "public_or_private"
+names(admissions)[149] <- "womens_college"
+names(admissions)[150] <- "lib_arts_college"
+names(admissions)[157] <- "girls_only_hs"
+
+names(admissions)[158] <- "mhc_preview_day"
+names(admissions)[159] <- "mhc_showcase_event"
+```
+
+
+```{r}
+
+#library(naniar)
+
+####remove all NA rows in race background: remove cell where 0.28 and 0.05 hispanic, 0.68 with white, american indian with 0.04, asian with 0.17, african with 0.11, pacific islander with 0.01.
+admissions <- admissions %>%
+  replace_with_na(replace = list(hispanic= c(0.28, 0.05),
+                             dom_white = c(0.68),
+                             american_indian = c(0.04),
+                             asian_american = c(0.17),
+                             african_american = c(0.11),
+                             pacific_islander_american = c(0.01)))
+
+##are we not accounting for students who have more than once race?
+#they go into color even if white and another race(s)
+```
+
+#make all dom POC in one column:hispanic, american_indian, asian_american, african_american, pacific_islander_american
+
+```{r}
+admissions$dom_stu_of_colour <- admissions$hispanic+ admissions$american_indian+ admissions$asian_american+ admissions$african_american+ admissions$pacific_islander_american
+
+```
+
+```{r}
+race <- c("int_stu", "dom_white","hispanic","american_indian","asian_american","african_american","pacific_islander_american" )
+
+racial_categories <- admissions[race]
+```
+
+#add financial aid stuff like inst grants etc.
+```{r}
+for_new <- c("FallYear","original_app_plan", "application", "Admit","Enroll", "accept_ED_as_RD", "final_app_rating",
+             
+            "native_language", "int_stu", "dom_stu_of_colour", "dom_white",
+             
+             "first_gen", "legacy", "sib_applied", "recruited_athlete", "athletic_interest","posse_applicant","posse_admit", "girls_only_hs",
+            "application_created",
+             
+             "sat_considered", "act_considered",  "comp_standardized_test_percentile" , "hs_gpa",
+            
+            "sat_comp","sat_verbal","sat_math","act_comp","act_math","act_reading","act_english","act_writing","act_science","toefl","ielts",
+             
+             "hs_name", "hs_us_zipcode","HighYieldFeederHS" ,"LowYieldFeederHS", "HighYieldZIPTrack", "LowYieldZIPTrack", 
+            #highyieldfeederhs was >15 for 3 years or >15 admits
+            #lowyieldfeederhs was less than 15 or more than 15 but no admits in the 3 years
+            #ziptrack: first 3 characters of hs zipcode
+             
+             "financial_aid", "orig_need","sfs_fam_contribution","sfs_inst_grant", "total_inst_grant_cofhe", 
+             "pell_grant_offered","loan_flag_cofhe","loan_value_cofhe","21_cent_merit" ,"total_inst_grant", "total_grants_awarded", "total_loans_awarded", "SelfhelpWorkFlagCOFHE",
+             
+             "acad_int_count",
+            
+            "campus_tour","info_session","college_fair","sisters_event","attended_focus_session","school_visit_day","third_party_interview","community_org_visit","campus_visit_day","gathering_event","student_lunch_event","total_engagement_pre_app" ,"mhc_preview_day", "mhc_showcase_event", 
+            
+            "all_mess_sent", "all_mess_open", "pre_app_mess_open", "pre_app_mess_sent", "post_app_mess_open","post_app_mess_sent",
+             
+             
+            "deposit_indicator","deposit_received_date",
+            
+            "attending_instead","2_or_4_year","public_or_private","womens_college","lib_arts_college")
+
+enrollment <- admissions[for_new] #68 variables. original had 166
+
+```
+
+#exclude ED1 and ED2 from plots and applications in 2020
+```{r}
+enrollment <- enrollment %>%
+  filter(FallYear != 2020)
+
+enrollment <- enrollment %>%
+  filter(original_app_plan == "RD")
+```
+
+
+```{r}
+#total grants awarded
+
+ggplot(data = enrollment, mapping = aes(x = total_grants_awarded, y = Enroll)) + 
+  geom_point() +
+  geom_smooth()
+
+#total loans awarded
+
+ggplot(data = enrollment, mapping = aes(x = total_loans_awarded, y = Enroll)) + 
+  geom_point() +
+  geom_smooth()
+
+#total_inst_grants
+
+ggplot(data = enrollment, mapping = aes(x = total_inst_grant, y = Enroll)) + 
+  geom_point() +
+  geom_smooth()
+
+#correlation b/w total grnats and total loans
+ggplot(data = enrollment, mapping = aes(x = total_grants_awarded, y = total_loans_awarded, color = factor(Enroll))) + 
+  geom_point() 
+
+#correlation b/w sat_verbal and toefl
+ggplot(data = enrollment, mapping = aes(x = sat_verbal, y = toefl, color = factor(Enroll))) + 
+   geom_point()+
+  geom_smooth()
+
+#post application messages sent for enrollment
+ggplot(data = enrollment, mapping = aes(x = post_app_mess_sent, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#post application messages opened for enrollment
+ggplot(data = enrollment, mapping = aes(x = post_app_mess_open, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#correlation between post app messages sent and opened
+ggplot(data = enrollment, mapping = aes(x = post_app_mess_sent, y = post_app_mess_open, color = factor(Enroll))) + 
+   geom_point()
+ 
+#all messages opened and enrollment
+ggplot(data = enrollment, mapping = aes(x = all_mess_open, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#all opened messages and post messages opened
+ggplot(data = enrollment, mapping = aes(x = all_mess_open, y = post_app_mess_open, color = factor(Enroll))) + 
+   geom_point()
+
+#all opened messages and post messages sent
+ggplot(data = enrollment, mapping = aes(x = post_app_mess_sent, y = all_mess_open, color = factor(Enroll))) + 
+   geom_point()+
+  geom_smooth()
+
+#toefl and enrollment
+ggplot(data = enrollment, mapping = aes(x = toefl, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#act_english and enrollment
+ggplot(data = enrollment, mapping = aes(x = act_english, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#act_math and enrollment
+ggplot(data = enrollment, mapping = aes(x = act_math, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#act_science and enrollment
+ggplot(data = enrollment, mapping = aes(x = act_science, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#act_reading and enrollment
+ggplot(data = enrollment, mapping = aes(x = act_reading, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#act_comp and enrollment
+ggplot(data = enrollment, mapping = aes(x = act_comp, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+#inst grnats and total grants correlation
+ggplot(data = enrollment, mapping = aes(x = total_inst_grant, y = total_grants_awarded)) + 
+   geom_point()+
+  geom_smooth()
+
+#total engagement pre app and enrollment
+ggplot(data = enrollment, mapping = aes(x = total_engagement_pre_app, y = Enroll)) + 
+   geom_point()+
+  geom_smooth()
+
+
+
+```
+```{r}
+#enrolled has only applicants that enrolled at Mount Holyoke
+
+enrolled <- enrollment %>%
+  filter(Enroll == 1)
+
+#trend between total grnats and total loans exist even when all obs are enrolled
+ggplot(data = enrolled, mapping = aes(x = total_grants_awarded, y = total_loans_awarded)) + 
+  geom_point()
+
+#correlation between sat_verbal and toefl for enrolled students
+ggplot(data = enrolled, mapping = aes(x = sat_verbal, y = toefl)) + 
+  geom_point()+
+  geom_smooth()
+
+
+
+
+```
+
+
+
+
+
