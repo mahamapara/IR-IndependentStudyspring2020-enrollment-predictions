@@ -1,0 +1,52 @@
+---
+title: "Data set up"
+author: "Maha Mapara"
+date: "6/16/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+new_data_file <- read_csv("Data_File_For_Independent_Study_Yield_Model.csv")
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(tidyr)
+library(naniar)
+```
+
+Rename columns
+```{r}
+names(new_data_file)[3] <- "sq_final_app_rating"
+names(new_data_file)[4] <- "race_white_american"
+names(new_data_file)[5] <- "sq_high_school_gpa_final"
+names(new_data_file)[6] <- "cubert_campus_tour"
+names(new_data_file)[7] <- "cubert_info_session"
+names(new_data_file)[8] <- "campus_visit_day"
+names(new_data_file)[9] <- "cubert_total_engagement"
+names(new_data_file)[10] <- "fin_aid"
+names(new_data_file)[15] <- "preview_day_event"
+names(new_data_file)[16] <- "showcase_event"
+names(new_data_file)[17] <- "sat_comp_Has"
+names(new_data_file)[18] <- "ln_sfs_total_fam_contribution_1000s"
+names(new_data_file)[20] <- "total_grants_awarded_1000s"
+names(new_data_file)[21] <- "ln_total_loans_awarded_1000s"
+names(new_data_file)[22] <- "cubert_modified_budget_1000s"
+
+```
+
+```{r}
+#replace NA's with 0.5. NA only in one column 
+new_data_file[is.na(new_data_file)] <- 0.5
+
+#number of observations in the training data set (3250)
+nrow(train_newdata)
+```
+
