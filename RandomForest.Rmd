@@ -1,0 +1,261 @@
+---
+title: "Untitled"
+author: "Maha Mapara"
+date: "4/22/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+libraries used
+```{r}
+library(randomForest)
+require(caTools)
+library(tidyverse)
+library(DataExplorer)
+library(lubridate)
+library(pander)
+library(data.table)
+library(grid)
+library(gridExtra)
+library(caret)
+library(ranger)
+```
+
+goal: reproduce code from RPubs random forest for titanic set(find source)
+
+```{r}
+myControl <- trainControl(method ="repeatedcv", 
+                          number = 10,
+                          repeats = 5,
+                          savePredictions = "final",
+                          search = "random",
+                          verboseIter = FALSE)
+```
+
+```{r}
+#install.packages("ranger")
+set.seed(2456)
+mod1 <- train(Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+                data = train_newdata,
+                method = "ranger",
+                trControl = myControl,
+                tuneLength = 5
+                )
+mod1
+```
+
+```{r}
+plot(mod1)
+```
+
+
+```{r}
+myControl.tunegird <- trainControl(method ="repeatedcv", 
+                          number = 10,
+                          repeats = 3,
+                          savePredictions = "final",
+                          verboseIter = FALSE)
+```
+
+```{r}
+set.seed(2600)
+
+myGrid <- expand.grid(.mtry = c(1:8)) 
+
+Model.tunegrid <- train(Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+                data = train_newdata,
+                method = "rf",
+                trControl = myControl.tunegird,
+                tuneGrid = myGrid
+                )
+Model.tunegrid
+```
+
+
+```{r}
+plot(Model.tunegrid)
+```
+
+run this again so tune legth is 10
+
+```{r}
+# library(doParallel)
+# cores <- 7
+# registerDoParallel(cores = cores)
+#mtry: Number of random variables collected at each split. In normal equal square number columns.
+#mtry <- sqrt(ncol(new_data_file))
+#ntree: Number of trees to grow.
+#ntree <- 3
+
+
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3,
+                        search ='random')
+
+#Random generate 15 mtry values with tuneLength = 15
+set.seed(10835)
+
+rf_random <- train(Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+                data = train_newdata,
+                   method = 'rf',
+                   metric = 'Accuracy',
+                   #tuneLength  = 10, 
+                   trControl = control, 
+                   tuneGrid = expand.grid(.mtry = c(1:10)))
+print(rf_random)
+```
+#85.44%
+```{r}
+plot(rf_random)
+```
+
+```{r}
+control <- trainControl(method='repeatedcv', 
+                        number=10, 
+                        repeats=3,
+                        search ='random')
+
+set.seed(10835)
+
+rf_random <- train(Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+                data = train_newdata,
+                   method = 'rf',
+                   metric = 'Accuracy',
+                   #tuneLength  = 10, 
+                   trControl = control, 
+                   tuneGrid = expand.grid(.mtry = c(1:10)))
+print(rf_random)
+
+plot(rf_random)
+```
+
+run this for roc with tunelength 10
+
+```{r}
+
+myControl.ROC <- trainControl(method ="repeatedcv", 
+                          number = 10,
+                          repeats = 3,
+                          savePredictions = "final",
+                          summaryFunction = twoClassSummary,
+                          classProbs = TRUE,
+                          verboseIter = FALSE)
+
+set.seed(3001)
+myGrid <- expand.grid(.mtry = c(1:10))
+
+Model.ROC <- train(Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+                data = train_newdata,
+                method = "rf",
+                trControl = myControl.ROC,
+                metric = "ROC",
+                tuneGrid = myGrid
+                )
+Model.ROC
+```
+
+```{r}
+plot(Model.ROC)
+```
+
+#predict for rf_fit
+```{r}
+test_newdata$rf_hat
+#test_newdata$Purchase_01
+
+test_newdata <- test_newdata %>%
+    mutate(rf_hat = predict(rf_random, newdata = test_newdata, type = "prob")[["X1"]],
+           Purchase_01 = ifelse(Enroll == "X1", 1, 0))
+
+ggplot(data = test_newdata, mapping = aes(m = rf_hat, d = Purchase_01)) +
+  geom_roc(cutoffs.at = c(0.05, 0.5), cutoff.labels = c("0.05", "0.5")) +
+  coord_equal() +
+  style_roc()
+
+test_newdata$rf_roc
+#test_newdata$Purchase_01
+
+test_newdata <- test_newdata %>%
+    mutate(rf_roc = predict(Model.ROC, newdata = test_newdata, type = "prob")[["X1"]],
+           Purchase_01 = ifelse(Enroll == "X1", 1, 0))
+
+ggplot(data = test_newdata, mapping = aes(m = rf_roc, d = Purchase_01)) +
+  geom_roc(cutoffs.at = c(0.05, 0.5), cutoff.labels = c("0.05", "0.5")) +
+  coord_equal() +
+  style_roc()
+
+
+ggplot(data = test_newdata) +
+  geom_roc(mapping = aes(m = f1_hat, d = Purchase_01)) +
+  #geom_roc(mapping = aes(m = rf_hat, d = Purchase_01), color = "cornflowerblue") +
+  geom_roc(mapping = aes(m = rf_roc, d = Purchase_01), color = "orange") +
+  coord_equal() +
+  style_roc()
+
+
+rf_only <- ggplot(data = test_newdata) +
+  #geom_roc(mapping = aes(m = f1_hat, d = Purchase_01)) +
+  geom_roc(mapping = aes(m = rf_hat, d = Purchase_01), color = "cornflowerblue") +
+  #geom_roc(mapping = aes(m = rf_roc, d = Purchase_01), color = "orange") +
+              coord_equal() +
+              style_roc()
+rf_only
+
+calc_auc(rf_only)
+
+```
+
+
+Code from stat-340 class for Random forest
+
+```{r}
+# rf_fit <- train(
+#   form = Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+#   data = train_newdata,
+#   method = "rf",
+#   trControl = trainControl(method = "oob",
+#   returnResamp = "all",
+#   savePredictions = TRUE),
+#   tuneLength = 28
+# )
+# 
+# rf_fit$results
+
+
+```
+
+
+```{r}
+
+# rf_fit <- train(
+#   form = Enroll ~ sq_final_app_rating + campus_visit_day + LN_AllMessagesOpen + PostApplicationMessagesOpen +  preview_day_event+ sat_comp_Has + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack,
+#   data = train_newdata,
+#   method = "rf",
+#   trControl = trainControl(method = "oob",
+#   returnResamp = "all",
+#   savePredictions = TRUE),
+#   tuneLength = 10
+# )
+# 
+# rf_fit$results
+```
+
+
+
+```{r}
+#importance(rf_fit$finalModel, type = 2)
+```
+
+```{r}
+
+#varImpPlot(rf_fit$finalModel, type = 2)
+```
+
+
+```{r}
+#rf_fit$finalModel$forest
+```

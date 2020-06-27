@@ -1,0 +1,143 @@
+---
+title: "Admissions Project"
+output: results
+Author: Sara Pradhan
+---
+
+importing packages and dataset
+```{r}
+library(tidyverse)
+library(readxl)
+#Admissions <- read_excel("Admissions.xlsx")
+```
+
+Dataframe with relevant financial aid variables
+```{r}
+#colnames(Admissions) 
+FinAid <- Admissions %>% 
+  select(FallYear, Semester, `Financial Aid`, Admit, Enroll, `Total Institutional Grants`, `Total Grants Awarded`, `Race International`, `Tuition Fees`, `Total Budget`)
+```
+
+Descriptives:
+
+All students
+```{r}
+FinAidStudents <- FinAid %>%filter(`Enroll` ==1)
+
+AvgAid<- mean(FinAidStudents$`Total Grants Awarded`, na.rm=TRUE)
+AvgAidMHC<- mean(FinAidStudents$`Total Institutional Grants`, na.rm=TRUE)
+
+```
+
+adding new column to calculate discount
+Discount = Total institutional grants/ tuition & fees * 100
+```{r}
+FinAidStudents$discount <- 
+  (FinAidStudents$`Total Institutional Grants`/FinAidStudents$`Tuition Fees`)*100
+
+  # if discount rate > 100, bring down to 100%
+  for(i in 1:nrow(FinAidStudents)){
+    if(is.na(FinAidStudents$discount[i]) == FALSE && FinAidStudents$discount[i]>100){
+      # print ( FinAidStudents$discount[i])
+      FinAidStudents$discount[i]=100
+    }
+  }
+
+AvgDiscountRate <- mean(FinAidStudents$`discount`, na.rm=TRUE)
+MedianDiscountRate <- median(FinAidStudents$discount, na.rm=TRUE)
+quantile(FinAidStudents$discount, na.rm=TRUE) 
+
+print(AvgDiscountRate)
+print(MedianDiscountRate)
+
+View(FinAidStudents)
+```
+
+International students 
+```{r}
+FinAidStudentsInt <- FinAid %>%filter(`Enroll` ==1, `Race International`==1)
+
+AvgAidInt <- mean(FinAidStudentsInt$`Total Grants Awarded`, na.rm=TRUE)
+AvgAidIntMHC <- mean(FinAidStudentsInt$`Total Institutional Grants`, na.rm=TRUE)
+
+FinAidStudentsInt$discount <- 
+  FinAidStudentsInt$`Total Institutional Grants`/FinAidStudentsInt$`Tuition Fees`*100
+
+  # if discount rate > 100, bring down to 100%
+  for(i in 1:nrow(FinAidStudentsInt)){
+    if(is.na(FinAidStudentsInt$discount[i]) == FALSE && FinAidStudentsInt$discount[i]>100){
+      FinAidStudentsInt$discount[i]=100
+    }
+  }
+
+AvgDiscountRateInt <- mean(FinAidStudentsInt$`discount`, na.rm=TRUE)
+MedianDiscountRateInt <- median(FinAidStudentsInt$discount, na.rm=TRUE)
+quantile(FinAidStudentsInt$discount, na.rm=TRUE) 
+
+print(AvgDiscountRateInt)
+print(MedianDiscountRateInt)
+View(FinAidStudentsInt)
+
+```
+
+Domestic students 
+```{r}
+FinAidStudentsDom <- FinAid %>%filter(`Enroll` ==1, `Race International`==0)
+
+AvgAidDom <- mean(FinAidStudentsDom$`Total Grants Awarded`, na.rm=TRUE)
+AvgAidDomMHC<- mean(FinAidStudentsDom$`Total Institutional Grants`, na.rm=TRUE)
+
+FinAidStudentsDom$discount <- 
+  FinAidStudentsDom$`Total Institutional Grants`/FinAidStudentsDom$`Tuition Fees`*100
+
+  # if discount rate > 100, bring down to 100%
+  for(i in 1:nrow(FinAidStudentsDom)){
+    if(is.na(FinAidStudentsDom$discount[i]) == FALSE && FinAidStudentsDom$discount[i]>100){
+      FinAidStudentsDom$discount[i]=100
+    }
+  }
+
+AvgDiscountRateDom <- mean(FinAidStudentsDom$`discount`, na.rm=TRUE)
+MedianDiscountRateDom <- median(FinAidStudentsDom$discount, na.rm=TRUE)
+quantile(FinAidStudentsDom$discount, na.rm=TRUE) 
+
+print(AvgDiscountRateDom)
+print(MedianDiscountRateDom)
+View(FinAidStudentsDom)
+
+```
+
+Printing the results in an output file
+```{r}
+sink("Admissions Project Results")
+
+cat("Admissions Project Results (2017-19)\n\n")
+cat ("All Students \n")
+cat("Average Financial Aid: $", AvgAid,"\n")
+cat("Average Institutional Grant: $", AvgAidMHC,"\n")
+cat("Discount rate:\n")
+cat("Mean:", AvgDiscountRate, "\nMedian:", MedianDiscountRate, "\n")
+cat("Quantile:\n", quantile(FinAidStudents$discount, na.rm=TRUE))
+
+cat ("\n\nInternational Students")
+cat("\nAverage Aid for International Students: $", AvgAidInt,"\n")
+cat("Average Institutional Grant for International Students: $", AvgAidIntMHC)
+cat("\nDiscount rate: \n")
+cat("Mean:", AvgDiscountRateInt,"\nMedian:", MedianDiscountRateInt, "\n")
+cat("Quantile:\n", quantile(FinAidStudentsInt$discount, na.rm=TRUE),"\n\n")
+
+cat ("Domestic Students \n")
+cat("Average Aid for Domestic Students: $", AvgAidDom,"\n")
+cat("Average Institutional Grant for Domestic Students: $", AvgAidDomMHC,"\n")
+cat("Discount rate: \n")
+cat("Mean:", AvgDiscountRateDom,"\nMedian:", MedianDiscountRateDom, "\n")
+cat("Quantile:\n", quantile(FinAidStudentsDom$discount, na.rm=TRUE))
+
+sink()
+```
+
+```{r}
+
+#View(FinAidStudents) 
+```
+

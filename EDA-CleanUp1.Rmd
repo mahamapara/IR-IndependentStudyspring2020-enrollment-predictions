@@ -1,0 +1,278 @@
+---
+title: "AdmissionEDA"
+author: "Maha Mapara"
+date: "10/8/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(caret)
+library(lubridate)
+library(lattice)
+library(gridExtra)
+library(GGally)
+library(ISLR)
+library(tidyr)
+
+install.packages("naniar")
+library(naniar)
+```
+
+
+```{r}
+library(readxl)
+MassMutualTestJumpStartDataAnalysis20191010 <- read_excel("MassMutualTestJumpStartDataAnalysis20191010.xlsx")
+```
+
+Response: Application
+Explanatory Variables:
+Columns of interest: 10-18, 21(race international), 29(first generation), 22-27(race), 39(legacy), 43(sib applied), 44(SAT considered), 48(ACT considered)
+55 (CompStandizedTestPercentile), 62-66(% of interests in that academic area(should add later)), 67(recruited athlete), 74(HS US Zipcode)
+85-85 (measures of engagement), 86(total engagement), 97(total_income), 98(sfs family contribution), 103(financial_aid, 116(21centmerit), 117(posse_applicant))
+
+132-135: 132-PreApplicationMessagesOpen; 133-PreApplicationMessageSent; 134-PostApplicationMessageSent; 135-PostApplicationsMessagesOpen
+
+
+```{r}
+admissions <- MassMutualTestJumpStartDataAnalysis20191010
+```
+
+
+```{r}
+#rename columns
+names(admissions)[14] <- "accept_ED_as_RD"
+names(admissions)[18] <- "final_app_rating"
+names(admissions)[21] <- "race_international"
+names(admissions)[22] <- "hispanic"
+names(admissions)[23] <- "american_indian"
+names(admissions)[24] <- "asian_american"
+names(admissions)[25] <- "african_american"
+names(admissions)[26] <- "pacific_islander_american"
+names(admissions)[27] <- "white_american"
+names(admissions)[29] <- "first_gen"
+names(admissions)[39] <- "legacy"
+names(admissions)[43] <- "sib_applied"
+names(admissions)[44] <- "sat_considered"
+names(admissions)[48] <- "act_considered"
+names(admissions)[56] <- "toefl"
+names(admissions)[57] <- "ielts"
+names(admissions)[61] <- "acad_int_count"
+names(admissions)[67] <- "recruited_athlete"
+names(admissions)[74] <- "hs_us_zipcode"
+names(admissions)[80] <- "hs_gpa"
+names(admissions)[96] <- "total_engagement"
+names(admissions)[97] <- "total_income"
+names(admissions)[98] <- "sfs_fam_cont"
+names(admissions)[103] <- "financial_aid"
+names(admissions)[104] <- "orig_need"
+names(admissions)[116] <- "cent_merit"
+names(admissions)[117] <- "posse_applicant"
+names(admissions)[118] <- "posse_admit"
+names(admissions)[136] <- "deposit_indicator"
+
+
+
+
+
+```
+
+```{r}
+str(admissions)
+```
+
+```{r}
+b <- admissions$Admit
+
+count0 <- length(which(b == 1))
+
+count0
+
+b <- admissions$Application
+
+count0 <- length(which(b == 1))
+
+count0
+```
+
+Boxplots
+```{r}
+#boxplot(admissions$Admit)
+# boxplot(admissions$total_income)
+# boxplot(admissions$sfs_fam_cont)
+# boxplot(admissions$orig_need)
+# boxplot(admissions$hs_gpa)
+
+# b1 <- boxplot(admissions$Application,
+#               main = "Application",
+#               xlab = "Applied or not",
+#               col = "orange",
+#               border = "brown",
+#               horizontal = TRUE,
+#               notch = TRUE
+#               )
+
+# b2 <- boxplot(admissions$Admit,
+#               main = "Admitted/Accepted",
+#               xlab = "Admitted or not",
+#               col = "orange",
+#               border = "brown",
+#               horizontal = TRUE,
+#               notch = TRUE
+#               )
+
+b3 <- boxplot(admissions$total_income,
+              main = "Total Family Income",
+              xlab = "Family Income",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b4 <- boxplot(admissions$sfs_fam_cont,
+              main = "SFS Family Contribution",
+              xlab = "Family Contribution",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b5 <- boxplot(admissions$hs_gpa,
+              main = "Final High School GPA",
+              xlab = "High School GPA",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b6 <- boxplot(admissions$orig_need,
+              main = "Original Need spread for applicants in 2017",
+              xlab = "Original Need",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b3
+b4
+b5
+b6
+```
+
+```{r}
+h1 <- hist(admissions$hs_gpa, col = "green", breaks = 100)
+
+h2 <- hist(admissions$orig_need, col = "green", breaks = 100)
+
+h3 <- hist(admissions$total_income, col = "green", breaks = 100)
+
+h4 <- hist(admissions$sfs_fam_cont, col = "green", breaks = 100)
+
+h1
+h2
+h3
+h4
+```
+
+
+```{r}
+#install.packages(Amelia)
+library(Amelia)
+library(mlbench)
+
+missmap(admissions, col = c("blue", "red"), legend = FALSE)
+```
+
+
+```{r}
+# pairs(~total_income+sfs_fam_cont+hs_gpa,aes(color=Admit), data=admissions)
+# 
+# vars_to_use <- c("total_income", "sfs_fam_cont", "hs_gpa", "orig_need", data = admissions)
+# ggpairs(vars_to_use, aes(color = Admit))
+
+```
+
+```{r}
+#plot(wt, mpg, main="Scatterplot Example"
+     
+# pairs(~Application+race_international+first_gen+legacy,data=admissions)
+```
+
+```{r}
+#use following columns for pair plots:
+#21, 29, 10-18, 39, 43, 44, 48, 55, 67, 86, 97, 98, 103, 116, 117
+
+# vars_to_use1 <- c("Application", "accept_ED_as_RD", "race_international", "first_gen", "legacy", "sib_applied", "sat_considered", "act_considered", "recruited_athlete")
+# # 
+# ggpairs(vars_to_use1, data = admissions)
+# 
+# 
+# 
+# vars_to_use2 <- c("application", "inquiry","total_engagement", "total_income", "sfs_fam_cont", "financial_aid", "cent_merit", "posse_applicant", "CompStandizedTestPercentile")
+# 
+# ggpairs(vars_to_use2, data = admissions)
+# 
+# 
+# #"hs_us_zipcode" Column 'hs_us_zipcode' has more levels (14669) than the threshold (15) allowed. Please #remove the column or increase the 'cardinality_threshold' parameter. Increasing the #cardinality_threshold may produce long processing times
+```
+
+```{r}
+pairs(vars_to_use, col = admissions$Admit)
+```
+
+####remove all NA rows in race background: remove cell where 0.28 and 0.05 hispanic, 0.68 with white, etc 
+
+#take off acad_int_count for now cuz in some cases col 2 is only pop and counted as two interest counts-- where is data coming from
+
+```{r}
+
+#library(naniar)
+
+####remove all NA rows in race background: remove cell where 0.28 and 0.05 hispanic, 0.68 with white, american indian with 0.04, asian with 0.17, african with 0.11, pacific islander with 0.01.
+admissions <- admissions %>%
+  replace_with_na(replace = list(hispanic= c(0.28, 0.05),
+                             white_american = c(0.68),
+                             american_indian = c(0.04),
+                             asian_american = c(0.17),
+                             african_american = c(0.11),
+                             pacific_islander_american = c(0.01)))
+View(admissions)
+
+##are we not accounting for students who have more than once race?
+#they go into color even if white and another race(s)
+```
+#make all dom POC in one column:hispanic, american_indian, asian_american, african_american, pacific_islander_american
+
+```{r}
+admissions$dom_stu_of_colour <- admissions$hispanic+ admissions$american_indian+ admissions$asian_american+ admissions$african_american+ admissions$pacific_islander_american
+
+View(admissions)
+```
+#race colunms: dom_stu_of_colour, white_american, race_international
+#rename white_american, race_international:
+```{r}
+names(admissions)[21] <- "int_stu"
+names(admissions)[27] <- "dom_white"
+```
+
+
+after this go to interpretation of odds ratios etc and include dummy var dom_color in models too.
+
+
+references:
+
+https://cran.r-project.org/web/packages/naniar/readme/README.html
+
+https://cran.r-project.org/web/packages/naniar/vignettes/replace-with-na.html
+
+https://cran.r-project.org/web/packages/fastDummies/vignettes/making-dummy-variables.html

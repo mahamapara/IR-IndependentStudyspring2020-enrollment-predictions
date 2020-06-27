@@ -1,0 +1,266 @@
+---
+title: "Subsetting Admissions"
+author: "Maha Mapara"
+date: "10/14/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(caret)
+library(lubridate)
+library(lattice)
+library(gridExtra)
+library(GGally)
+library(ISLR)
+library(tidyr)
+library(arm)
+library(naniar)
+```
+
+
+
+```{r}
+for_new <- c("Application", "Admit","Enroll", "accept_ED_as_RD", "int_stu", "dom_stu_of_colour", "dom_white","first_gen", "legacy", "sib_applied", "sat_considered", "act_considered", "recruited_athlete", "hs_us_zipcode","financial_aid", "cent_merit" ,"posse_applicant","posse_admit" ,"hs_gpa", "total_engagement", "total_income", "sfs_fam_cont","orig_need", "CompStandizedTestPercentile", "PreApplicationMessagesOpen", "PreApplicationMessageSent", "PostApplicationMessageSent", "PostApplicationMessagesOpen" ,"deposit_indicator")
+
+adm_small <- admissions[for_new]
+
+```
+
+```{r}
+str(adm_small)
+```
+
+```{r}
+hist(adm_small$hs_gpa, col = "green", breaks = 50)
+hist(adm_small$total_engagement, col = "green", breaks = 50)
+hist(adm_small$total_income, col = "green", breaks = 50)
+hist(adm_small$sfs_fam_cont, col = "green", breaks = 50)
+hist(adm_small$orig_need, col = "green", breaks = 50)
+hist(adm_small$CompStandizedTestPercentile, col = "green", breaks = 50)
+hist(adm_small$PreApplicationMessagesOpen, col = "green", breaks = 50)
+hist(adm_small$PreApplicationMessageSent, col = "green", breaks = 50)
+hist(adm_small$PostApplicationMessageSent, col = "green", breaks = 50)
+hist(adm_small$PostApplicationMessagesOpen, col = "green", breaks = 50)
+```
+
+```{r}
+b1 <- boxplot(adm_small$hs_gpa,
+              main = "HS GPA",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+
+b2 <- boxplot(adm_small$total_engagement,
+              main = "Total Engagement",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b3 <- boxplot(adm_small$total_income,
+              main = "Total Income",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b4 <- boxplot(adm_small$sfs_fam_cont,
+              main = "SFS Family Contribution",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b5 <- boxplot(adm_small$orig_need,
+              main = "Original Need($)",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+b6 <- boxplot(adm_small$CompStandizedTestPercentile,
+              main = "CompStandizedTestPercentile",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b7 <- boxplot(adm_small$PreApplicationMessagesOpen,
+              main = "PreApplicationMessagesOpen",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b8 <- boxplot(adm_small$PreApplicationMessageSent,
+              main = "PreApplicationMessageSent",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b9 <- boxplot(adm_small$PostApplicationMessageSent,
+              main = "PostApplicationMessageSent",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+b10 <- boxplot(adm_small$PostApplicationMessagesOpen,
+              main = "PostApplicationMessagesOpen",
+              col = "orange",
+              border = "brown",
+              horizontal = TRUE,
+              notch = TRUE
+              )
+
+
+```
+
+```{r}
+library(corrplot)
+
+corr <- cor(adm_small[, 17:26])
+
+corrplot(corr, method="circle")
+```
+
+```{r}
+pairs(adm_small[ ,17:26], col=adm_small$Admit)
+```
+
+```{r}
+library(caret)
+x <- adm_small[,17:26]
+y <- adm_small[,2]
+scales <- list(x=list(relation="free"), y=list(relation="free"))
+featurePlot(x=x, y=y, plot="density", scales=scales)
+```
+
+```{r}
+adm_small$inquiry<-admissions$Inquiry
+adm_small$sat_comp<-admissions$`SAT Composite`
+adm_small$act_comp<-admissions$`ACT Composite`
+adm_small$acad_int_count<-admissions$acad_int_count
+adm_small$toefl <- admissions$toefl
+adm_small$ielts <- admissions$ielts
+
+```
+
+
+Only choose variables we get at prospect/inquiry stage:-
+
+Response: Application
+Explanatory: citizenship, race reported, race_international, 6 races, race background, SAT comp, SAT verbal, SAT math, ACT comp, ACT math eng sci reading, compstandtestpercentile, toefl total, ielts overall band, primary acad int, acad int 1, acad int 2, acad int count, fine arts, humanities, langs, stem, social sciences, recruited athletes, HS name, HS geomarket, zipcode, state, country, grad year, Home geomarket, zipcode, city, state, country, 11 types of engagements, total engagement, PreAppMessagesOpen, PreAppMessagesSent, Age
+
+
+```{r}
+only_prosp <- c("Application", "int_stu", "dom_stu_of_colour", "dom_white", "recruited_athlete", "total_engagement", "toefl", "ielts","act_comp", "sat_comp", "CompStandizedTestPercentile", "acad_int_count", "PreApplicationMessageSent", "PreApplicationMessagesOpen")
+
+adm_prosp <- adm_small[only_prosp]
+  
+```
+
+All the models:
+
+mod1: race_international + recruited_athlete + total_engagement + CompStandizedTestPercentile
+sig: everything but recruited_athlete
+
+mod2: race_international + recruited_athlete + total_engagement + CompStandizedTestPercentile + acad_int_count + PreApplicationMessageSent
+sig: everything
+
+mod3: race_international + recruited_athlete + total_engagement + act_comp + sat_comp + CompStandizedTestPercentile + acad_int_count + PreApplicationMessageSent + PreApplicationMessagesOpen
+sig: total_engagement and messagessent
+
+mod4 : race_international + recruited_athlete + total_engagement + sat_comp + CompStandizedTestPercentile + acad_int_count + PreApplicationMessageSent + PreApplicationMessagesOpen
+sig: everything but sat_comp and messagesopen
+
+mod5: race_international + recruited_athlete + total_engagement + CompStandizedTestPercentile + acad_int_count + PreApplicationMessageSent + PreApplicationMessagesOpen
+sig: everything but messagesopen
+
+mod6: race_international + recruited_athlete + total_engagement + CompStandizedTestPercentile + acad_int_count + PreApplicationMessageSent 
+sig: everything. total engagement only * sig
+
+mod7: race_international + recruited_athlete + CompStandizedTestPercentile + acad_int_count + PreApplicationMessageSent
+sig: everything
+
+
+####remove all NA rows in race background: remove cell where 0.28 and 0.05 hispanic, 0.68 with white. 
+and make all dom POC in one column
+#take off acad_int_count for now cuz in some cases col 2 is only pop and counted as two interest counts-- where is data coming from
+
+```{r}
+
+mod1 <- glm(Application ~ race_international + recruited_athlete + total_engagement + CompStandizedTestPercentile, data = adm_prosp, family = binomial, maxit = 100)
+
+summary(mod1)
+```
+
+```{r}
+
+mod2 <- bayesglm(Application ~ race_international + recruited_athlete + total_engagement + CompStandizedTestPercentile + acad_int_count + PreApplicationMessageSent, data = adm_prosp, family = binomial, maxit = 100)
+
+summary(mod2)
+```
+
+```{r}
+mod3 <- bayesglm(Application ~ race_international + recruited_athlete + CompStandizedTestPercentile +  acad_int_count + PreApplicationMessageSent, data = adm_prosp, family = binomial, maxit = 100)
+
+summary(mod3)
+```
+
+Cross validation:
+```{r}
+set.seed(87059)
+train_inds <- caret::createDataPartition(adm_prosp$Application, p = 0.8)
+adm_prosp_train <- adm_prosp %>% slice(train_inds[[1]])
+adm_prosp_test <- adm_prosp %>% slice(-train_inds[[1]])
+val_folds <- caret::createFolds(adm_prosp_train$Application, k = 10)
+```
+
+```{r}
+val_mses <- rep(NA, 10)
+for (i in 1:10){
+  val_adm_prosp <- adm_prosp %>% slice(val_folds[[i]])
+  adm_prosp_train <- adm_prosp %>% -slice(val_folds[[i]])
+  fit <- bayesglm(Application ~ race_international + recruited_athlete + CompStandizedTestPercentile +  acad_int_count + PreApplicationMessageSent, data = adm_prosp_train, family = binomial, maxit = 100)
+  preds <- predict(fit, newdata = val_adm_prosp)
+  val_mse <- mean((val_adm_prosp$Application - preds)^2)
+  val_mses[i] <- val_mse
+}
+
+mean(val_mses)
+```
+
+#how much missing data? if less than 10% for a variable, not a concern. If above 10-15%, need to talk about it. Do a missingness test.
+
+Multiple imputation(not for this but cool)
+
+#remove all NA's. Seems like there is an as.numeric issue. so make all columns numeric and then do na.omit. Check dim of admissions vs adm_small to confirm row deletion. Then run model again, add inquiry too 
+
+
+References:
+https://www.datacamp.com/community/tutorials/logistic-regression-R
+
+https://www.theanalysisfactor.com/r-tutorial-count/
+
+https://www.datamentor.io/r-programming/subplot/
+
+https://www.statmethods.net/graphs/scatterplot.html

@@ -1,0 +1,430 @@
+---
+title: "log"
+author: "Maha Mapara"
+date: "4/29/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Goals: 
+1. to get confusion matrix for model with smallest error rate
+2. to get ROC curve
+
+
+```{r}
+library(plyr)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(caret)
+library(lubridate)
+library(lattice)
+library(gridExtra)
+library(GGally)
+library(ISLR)
+library(tidyr)
+library(naniar)
+```
+
+```{r}
+#should be a factor
+#new_data_file$Enroll <- as.factor(new_data_file$Enroll)
+#class(new_data_file$Enroll)
+
+levels(new_data_file$Enroll) <- make.names(levels(factor(new_data_file$Enroll)))
+
+table(new_data_file$Enroll)
+
+```
+
+
+```{r}
+set.seed(38355)
+
+train_newdata <- new_data_file %>%
+  filter(FallYear %in% c("2017", "2018")) #removed val from other rmd and have 2017-2019 in training data instead of                                                   #having a separate val with just 2019
+
+test_newdata <- new_data_file %>%
+  filter(FallYear == "2019")
+
+#train_inds <- caret::createDataPartition(wbca$Class, p = 0.7)
+#train_wbca <- wbca %>% slice(train_inds[[1]])
+#test_wbca <- wbca %>% slice(-train_inds[[1]])
+xval_folds <- caret::createFolds(train_newdata$Enroll, k = 10)
+```
+
+
+model 1: all variables:
+
+```{r}
+fit1 <- train(
+  form = Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+  data = train_newdata,
+  family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+  method = "glm", # method for fit; "generalized linear model"
+  trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+)
+summary(fit1)
+```
+
+```{r}
+error_rate <- rep(NA, 10)
+for(i in 1:10) {
+  train <- train_newdata %>% slice(-xval_folds[[i]])
+  val <- train_newdata %>% slice(xval_folds[[i]])
+  
+  fit1 <- train(
+    form = Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+    data = train,
+    family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+    method = "glm", # method for fit; "generalized linear model"
+    trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+  )
+  
+  preds <- predict(fit1, newdata = val)
+  
+  error_rate[i] <- mean(preds != val$Enroll)
+}
+
+##full training set
+mean(predict(fit1, newdata = train_newdata) != train$Enroll)
+
+#training error rate
+mean(predict(fit1, newdata = train) != train$Enroll)
+
+#validation error rate
+#error_rate
+mean(error_rate)
+```
+
+model 2:
+
+```{r}
+fit2 <- train(
+  form = Enroll ~ Ever_Waitlist + sq_final_app_rating + sq_high_school_gpa_final + campus_visit_day + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s+ China + CUBERT_DaystoApply + ImpactZipTrack,
+  data = train_newdata,
+  family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+  method = "glm", # method for fit; "generalized linear model"
+  trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+)
+summary(fit2)
+```
+
+```{r}
+error_rate <- rep(NA, 10)
+for(i in 1:10) {
+  train <- train_newdata %>% slice(-xval_folds[[i]])
+  val <- train_newdata %>% slice(xval_folds[[i]])
+  
+  fit2 <- train(
+    form = Enroll ~ Ever_Waitlist + sq_final_app_rating + sq_high_school_gpa_final + campus_visit_day + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s+ China + CUBERT_DaystoApply + ImpactZipTrack,
+    data = train,
+    family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+    method = "glm", # method for fit; "generalized linear model"
+    trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+  )
+  
+  preds <- predict(fit2, newdata = val)
+  
+  error_rate[i] <- mean(preds != val$Enroll)
+}
+
+##full training set
+mean(predict(fit2, newdata = train_newdata) != train$Enroll)
+
+#training error rate
+mean(predict(fit2, newdata = train) != train$Enroll)
+
+#validation error rate
+#error_rate
+mean(error_rate)
+```
+
+model 3:
+
+```{r}
+fit3 <- train(
+  form = Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack,
+  data = train_newdata,
+  family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+  method = "glm", # method for fit; "generalized linear model"
+  trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+)
+summary(fit3)
+```
+
+```{r}
+error_rate <- rep(NA, 10)
+for(i in 1:10) {
+  train <- train_newdata %>% slice(-xval_folds[[i]])
+  val <- train_newdata %>% slice(xval_folds[[i]])
+  
+  fit3 <- train(
+    form = Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack,
+    data = train,
+    family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+    method = "glm", # method for fit; "generalized linear model"
+    trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+  )
+  
+  preds <- predict(fit3, newdata = val)
+  
+  error_rate[i] <- mean(preds != val$Enroll)
+}
+
+##full training set
+mean(predict(fit3, newdata = train_newdata) != train$Enroll)
+
+#training error rate
+mean(predict(fit3, newdata = train) != train$Enroll)
+
+#validation error rate
+#error_rate
+mean(error_rate)
+```
+
+model 4:
+
+```{r}
+fit4 <- train(
+  form = Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack,
+  data = train_newdata,
+  family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+  method = "glm", # method for fit; "generalized linear model"
+  trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+)
+summary(fit4)
+```
+
+```{r}
+error_rate <- rep(NA, 10)
+for(i in 1:10) {
+  train <- train_newdata %>% slice(-xval_folds[[i]])
+  val <- train_newdata %>% slice(xval_folds[[i]])
+  
+  fit4 <- train(
+    form = Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack,
+    data = train,
+    family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+    method = "glm", # method for fit; "generalized linear model"
+    trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+  )
+  
+  preds <- predict(fit4, newdata = val)
+  
+  error_rate[i] <- mean(preds != val$Enroll)
+}
+
+##full training set
+mean(predict(fit4, newdata = train_newdata) != train$Enroll)
+
+#training error rate
+mean(predict(fit4, newdata = train) != train$Enroll)
+
+#validation error rate
+#error_rate
+mean(error_rate)
+```
+Confusion matrices and classification accuracy + classification error rate + false positive rate + true positive rate
+
+for model 1: 
+```{r}
+fit1 <- train(
+  form = Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+  data = train_newdata,
+  family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+  method = "glm", # method for fit; "generalized linear model"
+  trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+)
+test_pred1 <- predict(fit1, newdata = test_newdata)
+
+table(test_newdata$Enroll, test_pred1)
+
+class_accuracy <- (900+160)/(900+160+127+77)
+class_error_rate <- (127+77)/(900+160+127+77)
+false_positive_rate <- 77/(900+77)
+true_positive_rate <- 160/(160+127)
+
+class_accuracy
+class_error_rate
+false_positive_rate
+true_positive_rate
+```
+
+for model 2:
+```{r}
+fit2 <- train(
+  form = Enroll ~ Ever_Waitlist + sq_final_app_rating + sq_high_school_gpa_final + campus_visit_day + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s+ China + CUBERT_DaystoApply + ImpactZipTrack,
+  data = train_newdata,
+  family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+  method = "glm", # method for fit; "generalized linear model"
+  trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+)
+test_pred2 <- predict(fit2, newdata = test_newdata)
+
+table(test_newdata$Enroll, test_pred2)
+
+class_accuracy <- (896+155)/(896+155+132+81)
+class_error_rate <- (81+132)/(896+155+132+81)
+false_positive_rate <- 81/(81+896)
+true_positive_rate <- 155/(132+155)
+
+class_accuracy
+class_error_rate
+false_positive_rate
+true_positive_rate
+```
+
+
+for model 3:
+
+```{r}
+fit3 <- train(
+  form = Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack,
+  data = train_newdata,
+  family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+  method = "glm", # method for fit; "generalized linear model"
+  trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+)
+test_pred3 <- predict(fit3, newdata = test_newdata)
+
+table(test_newdata$Enroll, test_pred3)
+
+class_accuracy <- (927+142)/(927+142+145+50)
+class_error_rate <- (50+145)/(926+142+145+50)
+false_positive_rate <- 50/(927+50)
+true_positive_rate <- 142/(145+142)
+
+class_accuracy
+class_error_rate
+false_positive_rate
+true_positive_rate
+```
+
+
+for model 4:
+```{r}
+fit4 <- train(
+  form = Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack,
+  data = train_newdata,
+  family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+  method = "glm", # method for fit; "generalized linear model"
+  trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+)
+test_pred4 <- predict(fit4, newdata = test_newdata)
+
+table(test_newdata$Enroll, test_pred4)
+
+class_accuracy <- (926+142)/(926+142+145+51)
+class_error_rate <- (51+145)/(926+142+145+51)
+false_positive_rate <- 51/(926+51)
+true_positive_rate <- 142/(145+142)
+
+class_accuracy
+class_error_rate
+false_positive_rate
+true_positive_rate
+```
+
+```{r}
+#Test set performance: looking for low test set error rate, high test set accuracy
+
+#fit1:
+mean(test_newdata$Enroll != predict(fit1, test_newdata))
+
+mean(test_newdata$Enroll == predict(fit1, test_newdata))
+
+#fit2:
+
+mean(test_newdata$Enroll != predict(fit2, test_newdata))
+
+mean(test_newdata$Enroll == predict(fit2, test_newdata))
+
+#fit3:
+mean(test_newdata$Enroll != predict(fit3, test_newdata))
+
+mean(test_newdata$Enroll == predict(fit3, test_newdata))
+
+
+#fit4:
+mean(test_newdata$Enroll != predict(fit4, test_newdata))
+
+mean(test_newdata$Enroll == predict(fit4, test_newdata))
+```
+
+#try this:
+```{r}
+sens <- true_positive_rate
+spec <- 1 - false_positive_rate
+
+ggplot(data = test_newdata, mapping = aes(x = spec, y = sens))+
+  geom_roc(cutoffs.at = c(0.05, 0.5), cutoff.labels = c("0.05", "0.5"))+
+  coord_equal() +
+  style_roc()
+```
+
+
+
+```{r}
+library(plotROC)
+# add two variables to the data frame: predicted probability of being in class 1
+# and a 0/1 version of the response variable (required by geom_roc)
+
+#train set of model 2
+train_newdata$f1_hat
+train_newdata$Purchase_01
+
+train_newdata <- train_newdata %>%
+    mutate(f1_hat = predict(fit2, type = "prob")[["X1"]],
+           Purchase_01 = ifelse(Enroll == "X1", 1, 0))
+
+ggplot(data = train_newdata, mapping = aes(m = f1_hat, d = Purchase_01)) +
+geom_roc(cutoffs.at = c(0.05, 0.5), cutoff.labels = c("0.05", "0.5")) +
+coord_equal() +
+style_roc()
+
+
+
+#for test set for model2
+test_newdata$f1_hat
+test_newdata$Purchase_01
+
+test_newdata <- test_newdata %>%
+    mutate(f1_hat = predict(fit2, newdata = test_newdata, type = "prob")[["X1"]],
+           Purchase_01 = ifelse(Enroll == "X1", 1, 0))
+
+logistic_only <- ggplot(data = test_newdata, mapping = aes(m = f1_hat, d = Purchase_01)) +
+  geom_roc(cutoffs.at = c(0.05, 0.5), cutoff.labels = c("0.05", "0.5")) +
+  coord_equal() +
+  style_roc()
+
+calc_auc(logistic_only)
+```
+
+
+```{r}
+#View(val)
+
+val$pred <- predict(fit2, newdata = val, type = "prob")[["X1"]]
+
+
+plot_acc = function(val){
+    thres = (1:100)/100
+    acc = thres
+    for(i in 1:length(thres)){
+        acc[i] = mean((val$pred>thres[i]) == val$Enroll, na.rm=T)
+    }
+    plot(thres,acc,type="l",col="blue",lwd=2,xlab="Thresholds", ylab="Overall Accuracy")
+    abline(v=0.5,lty=2,col="grey")
+}
+
+plot_acc(test_newdata)
+
+```
+
+

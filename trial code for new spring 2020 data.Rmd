@@ -1,0 +1,366 @@
+---
+title: "for new data file"
+author: "Maha Mapara"
+date: "4/4/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+new_data_file <- read_csv("Data_File_For_Independent_Study_Yield_Model.csv")
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(caret)
+library(lubridate)
+library(lattice)
+library(gridExtra)
+library(GGally)
+library(ISLR)
+library(tidyr)
+library(naniar)
+```
+
+Rename columns
+```{r}
+names(new_data_file)[3] <- "sq_final_app_rating"
+names(new_data_file)[4] <- "race_white_american"
+names(new_data_file)[5] <- "sq_high_school_gpa_final"
+names(new_data_file)[6] <- "cubert_campus_tour"
+names(new_data_file)[7] <- "cubert_info_session"
+names(new_data_file)[8] <- "campus_visit_day"
+names(new_data_file)[9] <- "cubert_total_engagement"
+names(new_data_file)[10] <- "fin_aid"
+names(new_data_file)[15] <- "preview_day_event"
+names(new_data_file)[16] <- "showcase_event"
+names(new_data_file)[17] <- "sat_comp_Has"
+names(new_data_file)[18] <- "ln_sfs_total_fam_contribution_1000s"
+names(new_data_file)[20] <- "total_grants_awarded_1000s"
+names(new_data_file)[21] <- "ln_total_loans_awarded_1000s"
+names(new_data_file)[22] <- "cubert_modified_budget_1000s"
+
+```
+
+Separating the data into training, validation and test sets based on the enrollment year (variable: FallYear)
+```{r}
+train_newdata <- new_data_file %>%
+  filter(FallYear %in% c("2017", "2018"))
+
+validation_newdata <- new_data_file %>%
+  filter(FallYear == "2019")
+
+test_newdata <- new_data_file %>%
+  filter(FallYear == "2020")
+```
+
+#check for other NA's
+```{r}
+apply(new_data_file, 2, function(x) any(is.na(x)))
+
+sum(is.na(new_data_file$ImpactZipTrack))
+sum(is.na(train_newdata$ImpactZipTrack))
+sum(is.na(validation_newdata$ImpactZipTrack))
+sum(is.na(test_newdata$ImpactZipTrack))
+
+
+apply(train_newdata, 2, function(x) any(is.na(x)))
+
+sum(is.na(train_newdata$ImpactZipTrack))
+
+#replace NA's with 0.5. NA only in one column 
+new_data_file[is.na(new_data_file)] <- 0.5
+
+#number of observations in the training data set (3250)
+nrow(train_newdata)
+```
+
+MODELS ON TRAINING DATA SET TO SEE STATISTICALLY SIGNIFICANT VARIABLES
+
+Model 1: has all the variables from the data set
+```{r}
+model1 <- (glm(Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack, data = train_newdata, family = binomial))
+
+summary(model1)
+
+```
+
+Model 2
+# selfhelp no longer significant
+```{r}
+model2 <- (glm(Enroll ~ Ever_Waitlist + sq_final_app_rating + sq_high_school_gpa_final + campus_visit_day + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s+ China + CUBERT_DaystoApply + ImpactZipTrack, data = train_newdata, family = binomial))
+
+summary(model2)
+```
+
+Model 3
+```{r}
+model3 <- (glm(Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack, data = train_newdata, family = binomial))
+
+summary(model3)
+
+```
+
+Model 4: all variables in this are statistically significant
+```{r}
+model4 <- (glm(Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack, data = train_newdata, family = binomial))
+
+summary(model4)
+```
+
+
+```{r}
+predictions <- model1 %>% predict(test_newdata)
+data.frame( R2 = R2(predictions, test_newdata$Enroll),
+            RMSE = RMSE(predictions,test_newdata$Enroll),
+            MAE = MAE(predictions, test_newdata$Enroll))
+
+
+predictions <- model2 %>% predict(test_newdata)
+data.frame( R2 = R2(predictions, test_newdata$Enroll),
+            RMSE = RMSE(predictions,test_newdata$Enroll),
+            MAE = MAE(predictions, test_newdata$Enroll))
+
+predictions <- model3 %>% predict(test_newdata)
+data.frame( R2 = R2(predictions, test_newdata$Enroll),
+            RMSE = RMSE(predictions,test_newdata$Enroll),
+            MAE = MAE(predictions, test_newdata$Enroll))
+
+predictions <- model4 %>% predict(test_newdata)
+data.frame( R2 = R2(predictions, test_newdata$Enroll),
+            RMSE = RMSE(predictions,test_newdata$Enroll),
+            MAE = MAE(predictions, test_newdata$Enroll))
+
+```
+
+```{r}
+set.seed(123)
+train.control <- trainControl(method = "repeatedcv", 
+                              number = 10, repeats = 50)
+# Train the model
+mod1 <- train(Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack, data = train_newdata, family = "binomial", method = "glm", trControl = train.control)
+
+# Summarize the results
+print(mod1)
+```
+
+```{r}
+# Train the model
+mod2 <- train(Enroll ~ Ever_Waitlist + sq_final_app_rating + sq_high_school_gpa_final + campus_visit_day + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s+ China + CUBERT_DaystoApply + ImpactZipTrack, data = train_newdata, family = "binomial", method = "glm",trControl = train.control)
+# Summarize the results
+print(mod2)
+```
+
+
+```{r}
+# Train the model
+mod3 <- train(Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack, data = train_newdata, family = "binomial", method = "glm", trControl = train.control)
+# Summarize the results
+print(mod3)
+```
+
+
+```{r}
+# False positive rate
+fpr <- NULL
+
+# False negative rate
+fnr <- NULL
+
+# Number of iterations
+k <- 500
+
+# Initialize progress bar
+pbar <- create_progress_bar('text')
+pbar$init(k)
+
+# Accuracy
+acc <- NULL
+
+set.seed(123)
+
+# Train the model
+mod4 <- train(Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack, data = train_newdata, family = "binomial", method = "glm", trControl = train.control)
+# Summarize the results
+print(mod4)
+
+# Predict results
+   results_prob <- predict(model,subset(test,select=c(2:9)),type='response')
+    
+    # If prob > 0.5 then 1, else 0
+    results <- ifelse(results_prob > 0.5,1,0)
+    
+    # Actual answers
+    answers <- test$Enroll
+    
+    # Accuracy calculation
+    misClasificError <- mean(answers != results)
+    
+    # Collecting results
+    acc[i] <- 1-misClasificError
+    
+    # Confusion matrix
+    cm <- confusionMatrix(data=results, reference=answers)
+    fpr[i] <- cm$table[2]/(nrow(dat)-smp_size)
+    fnr[i] <- cm$table[3]/(nrow(dat)-smp_size)
+    
+    pbar$step()
+
+
+# Average accuracy of the model
+mean(acc)
+
+par(mfcol=c(1,2))
+
+# Histogram of accuracy
+hist(acc,xlab='Accuracy',ylab='Freq',
+     col='cyan',border='blue',density=30)
+
+# Boxplot of accuracy
+boxplot(acc,col='cyan',border='blue',horizontal=T,xlab='Accuracy',
+        main='Accuracy CV')
+
+# Confusion matrix and plots of fpr and fnr
+mean(fpr)
+mean(fnr)
+hist(fpr,xlab='% of fnr',ylab='Freq',main='FPR',
+     col='cyan',border='blue',density=30)
+hist(fnr,xlab='% of fnr',ylab='Freq',main='FNR',
+     col='cyan',border='blue',density=30)
+
+```
+
+
+```{r}
+fit1 <- train(
+    form = Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack,
+    data = train_newdata,
+    family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+    method = "glm", # method for fit; "generalized linear model"
+    trControl = trainControl(method = "none", savePredictions = TRUE)
+  )
+  
+preds <- predict(fit1, newdata = validation_newdata)
+  
+summary(fit1)
+
+#preds
+
+```
+
+```{r}
+#library(plyr)
+# Cross validation (customized)
+
+#library(plyr)   # progress bar
+#library(caret)  # confusion matrix
+
+# False positive rate
+fpr <- NULL
+
+# False negative rate
+fnr <- NULL
+
+# Number of iterations
+k <- 500
+
+# Initialize progress bar
+pbar <- create_progress_bar('text')
+pbar$init(k)
+
+# Accuracy
+acc <- NULL
+
+set.seed(123)
+
+for(i in 1:k)
+{
+    # Train-test splitting
+    # 95% of samples -> fitting
+    # 5% of samples -> testing
+    smp_size <- floor(0.95 * nrow(new_data_file))
+    index <- sample(seq_len(nrow(new_data_file)),size=smp_size)
+    train <- new_data_file[index, ]
+    test <- new_data_file[-index, ]
+    
+    # Fitting
+    model <- glm(Enroll ~ sq_final_app_rating + campus_visit_day + LN_AllMessagesOpen + PostApplicationMessagesOpen +  preview_day_event+ sat_comp_Has + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack, family=binomial, data=new_data_file)
+    
+    # Predict results
+    results_prob <- predict(model,subset(test,select=c(2:9)),type='response')
+    
+    # If prob > 0.5 then 1, else 0
+    results <- ifelse(results_prob > 0.5,1,0)
+    
+    # Actual answers
+    answers <- test$Enroll
+    
+    # Accuracy calculation
+    misClasificError <- mean(answers != results)
+    
+    # Collecting results
+    acc[i] <- 1-misClasificError
+    
+    # Confusion matrix
+    cm <- confusionMatrix(data=results, reference=answers)
+    fpr[i] <- cm$table[2]/(nrow(dat)-smp_size)
+    fnr[i] <- cm$table[3]/(nrow(dat)-smp_size)
+    
+    pbar$step()
+}
+
+# Average accuracy of the model
+mean(acc)
+
+par(mfcol=c(1,2))
+
+# Histogram of accuracy
+hist(acc,xlab='Accuracy',ylab='Freq',
+     col='cyan',border='blue',density=30)
+
+# Boxplot of accuracy
+boxplot(acc,col='cyan',border='blue',horizontal=T,xlab='Accuracy',
+        main='Accuracy CV')
+
+# Confusion matrix and plots of fpr and fnr
+mean(fpr)
+mean(fnr)
+hist(fpr,xlab='% of fnr',ylab='Freq',main='FPR',
+     col='cyan',border='blue',density=30)
+hist(fnr,xlab='% of fnr',ylab='Freq',main='FNR',
+     col='cyan',border='blue',density=30)
+
+
+```
+
+
+code for cross validation
+```{r}
+error_rate <- rep(NA, 10)
+for(i in 1:10) {
+  train <- train_enroll %>% slice(-val_folds[[i]])
+  val <- train_enroll %>% slice(val_folds[[i]])
+  
+  fit <- train(
+    form = Enroll ~ total_loans_awarded + HighYieldFeederHS + final_app_rating + total_engagement_pre_app +toefl + post_app_mess_sent + post_app_mess_open,
+    data = train,
+    family = "binomial", # this is an argument to glm; response is 0 or 1, binomial
+    method = "glm", # method for fit; "generalized linear model"
+    trControl = trainControl(method = "none", classProbs = TRUE, savePredictions = TRUE)
+  )
+  
+  preds <- predict(fit, newdata = valval)
+  
+  error_rate[i] <- mean(preds != valval$Class)
+}
+error_rate
+mean(error_rate)
+```
+
+

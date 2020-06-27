@@ -1,0 +1,40 @@
+---
+title: "Untitled"
+author: "Maha Mapara"
+date: "11/6/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+In this document, we are creating models after changing the race varibales to int_stu, dom_stu_of_colour and dom_white
+
+
+```{r}
+mod1 <- glm(Application ~ int_stu + dom_stu_of_colour + recruited_athlete + total_engagement + CompStandizedTestPercentile, data = adm_prosp, family = binomial, maxit = 100)
+
+summary(mod1)
+```
+
+```{r}
+mod2 <- glm(Application ~ int_stu + dom_stu_of_colour + recruited_athlete + total_engagement + CompStandizedTestPercentile + PreApplicationMessageSent +PreApplicationMessagesOpen, data = adm_prosp, family = binomial, maxit = 100)
+
+summary(mod2)
+```
+
+#removed recruited athlete
+```{r}
+mod3 <- glm(Application ~ int_stu + dom_stu_of_colour + total_engagement + CompStandizedTestPercentile +  PreApplicationMessageSent +PreApplicationMessagesOpen, data = adm_prosp, family = binomial, maxit = 100)
+
+summary(mod3)
+```
+race_international + recruited_athlete + CompStandizedTestPercentile + acad_int_count + PreApplicationMessageSent
+
+```{r}
+mod4 <- glm(Application ~ int_stu + dom_stu_of_colour + recruited_athlete + total_engagement + CompStandizedTestPercentile +  PreApplicationMessageSent +PreApplicationMessagesOpen, data = adm_prosp, family = binomial, maxit = 100)
+
+summary(mod4)
+```
+
