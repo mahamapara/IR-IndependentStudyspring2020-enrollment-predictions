@@ -1,7 +1,4 @@
-# Admission
-Student Recruitment Analytics
+Fall 2020: Exploratory analysis of data for the the Office of Institutional Research for the purpose of determining the factors that influence whether a prospective student applies to Mount Holyoke College or not
 
+Spring 2020: Independent study with the Office of Institutional Research at Mount Holyoke College to create models to predict enrollment yield.
 
-Fall 2020: exploratory analysis of data for the purpose of predicting whether a prospective studernt applies to Mount Holyoke 
-
-Spring 2020: Independent study designed to create models that predict enrollment using logistic regression, decision trees and random forest
