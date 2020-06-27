@@ -1,0 +1,27 @@
+---
+title: "Presentation"
+author: "Maha Mapara"
+date: "6/27/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Graph with ROC's for logistic regression, decision tree and random forest models
+
+```{r}
+#f1_hat + rf_hat + tree_hat
+all_three <- ggplot(data = test_newdata) +
+              geom_roc(mapping = aes(m = f1_hat, d = Purchase_01)) +
+              geom_roc(mapping = aes(m = rf_hat, d = Purchase_01), color = "cornflowerblue") +
+              geom_roc(mapping = aes(m = tree_hat[,2], d = Purchase_01), color = "orange")+
+              coord_equal() +
+              style_roc()
+
+all_three
+
+calc_auc(all_three) #not useful
+```
+
