@@ -1,0 +1,230 @@
+---
+title: "Decision trees"
+author: "Maha Mapara"
+date: "4/12/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#First trial: using party package for decision trees
+
+```{r}
+install.packages("party")
+library(party)
+```
+
+
+```{r}
+output.tree1 <- ctree(
+  Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack, 
+  data = train_newdata)
+
+# Plot the tre.
+plot(output.tree1)
+
+#not a clear decision tree. will not use party package
+```
+
+
+#Second trial: Use rpart and rpart.plot to create decision treees
+
+```{r}
+install.packages("rpart")
+install.packages("rpart.plot")
+
+library(rpart)
+library(rpart.plot)
+```
+
+Four trees using rpart function on training set data
+
+```{r}
+tree1 = rpart(Enroll ~ Ever_Waitlist + sq_final_app_rating + race_white_american + Domestic_Student_of_Color + sq_high_school_gpa_final + cubert_campus_tour + cubert_info_session + campus_visit_day + cubert_total_engagement + fin_aid + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + CUBERT_PreApplicationMessagesOpen + PostApplicationMessagesOpen + preview_day_event + showcase_event + sat_comp_Has + ln_sfs_total_fam_contribution_1000s + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + cubert_modified_budget_1000s + China + CUBERT_DaystoApply + ImpactFeederHS + ImpactZipTrack, 
+  data = train_newdata)
+```
+
+```{r}
+tree2 = rpart(Enroll ~ Ever_Waitlist + sq_final_app_rating + sq_high_school_gpa_final + campus_visit_day + SelfhelpWorkFlagCOFHE + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s+ China + CUBERT_DaystoApply + ImpactZipTrack, 
+  data = train_newdata)
+```
+
+
+```{r}
+tree3 = rpart(Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + InstGrantMeetingNeedCOFHE_1000s + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack, 
+  data = train_newdata)
+```
+
+```{r}
+tree4 = rpart(Enroll ~ sq_final_app_rating + campus_visit_day  + LN_AllMessagesOpen + PostApplicationMessagesOpen + preview_day_event+ sat_comp_Has + total_grants_awarded_1000s + ln_total_loans_awarded_1000s + CUBERT_DaystoApply + ImpactZipTrack, data = train_newdata)
+```
+
+Plot trees using prp command in rpart.plot
+```{r}
+prp(tree1)
+prp(tree2)
+prp(tree3)
+prp(tree4)
+```
+
+Using rpart.plot to plot visually appealing trees
+```{r}
+rpart.plot(tree1, type = 2, extra = "auto", clip.right.labs = FALSE, yesno = 2, tweak = 1.2, branch = 0.3)
+rpart.plot(tree2, type = 2, extra = "auto", clip.right.labs = FALSE, yesno = 2, tweak = 1.2, branch = 0.3)
+rpart.plot(tree3, type = 2, extra = "auto", clip.right.labs = FALSE, yesno = 2, tweak = 1.2, branch = 0.3)
+#rpart.plot(tree4, extra = 104, nn = TRUE)
+rpart.plot(tree4, type = 2, extra = "auto", clip.right.labs = FALSE, yesno = 2, tweak = 1.2, branch = 0.3)
+
+#prints the tree 1 information non visually
+print(rpart.rules(tree1, cover = TRUE))
+```
+Notes on reading the trees:
+
+Each node shows
+- the predicted class (enrolled or didn't),
+- the predicted probability of enrollment,
+- the percentage of observations in the node
+
+
+How to edit:
+1. only do vals first, edit code to make it val specif
+2. then say because vals same, using first tree
+3. do test for tree1
+
+Tree 1, validation set accuracy and error rates
+```{r}
+predict_unseen <-predict(tree1, val, type = 'class')
+table_mat <- table(val$Enroll, predict_unseen)
+table_mat
+
+accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
+print(paste('Accuracy for validation set', accuracy_Test))
+
+error_tree1 <- (30+25)/(sum(table_mat))
+print(paste('Error rate for validation set', error_tree1))
+```
+
+```{r}
+predict_unseen <-predict(tree2, val, type = 'class')
+table_mat <- table(val$Enroll, predict_unseen)
+table_mat
+
+accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
+print(paste('Accuracy for validation set', accuracy_Test))
+```
+
+```{r}
+predict_unseen <-predict(tree3, val, type = 'class')
+table_mat <- table(val$Enroll, predict_unseen)
+table_mat
+
+accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
+print(paste('Accuracy for validation set', accuracy_Test))
+```
+
+```{r}
+predict_unseen <-predict(tree4, val, type = 'class')
+table_mat <- table(val$Enroll, predict_unseen)
+table_mat
+
+accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
+print(paste('Accuracy for validation set', accuracy_Test))
+```
+
+All the accuracy rates were same so chose tree1
+
+Tree1 test set confusion matrix, accuracy, error, fpr and tpr
+```{r}
+predict_unseen <-predict(tree1, test_newdata, type = 'class')
+table_mat <- table(test_newdata$Enroll, predict_unseen)
+table_mat
+
+accuracy_Test <- sum(diag(table_mat)) / sum(table_mat)
+print(paste('Accuracy for test set, tree1', accuracy_Test))
+
+error_tree1 <- (114+78)/(sum(table_mat))
+fpr_tree1 <- 78/(78+899)
+tpr_tree1 <- 173/(173+114)
+
+print(paste('Error rate for test set', error_tree1))
+print(paste('False positive rate for test set', fpr_tree1))
+print(paste('True positive rate for test set', tpr_tree1))
+```
+
+
+ROC curve for decision tree1
+```{r}
+train_newdata$tree_hat <- predict(tree1, train_newdata, type = 'class')
+
+test_newdata$tree_hat <- predict(tree1, test_newdata, type = 'prob')
+
+ncol(test_newdata$tree_hat)
+
+dt_roc <- ggplot(data = test_newdata) +
+  geom_roc(mapping = aes(m = tree_hat[,2], d = Purchase_01)) +
+  coord_equal() +
+  style_roc()
+
+dt_roc
+
+#AUC value
+calc_auc(dt_roc)
+
+# ggplot(data = Caravan) +
+#   geom_roc(mapping = aes(m = f1_hat, d = Purchase_01)) +
+#   geom_roc(mapping = aes(m = knn_f1_hat, d = Purchase_01), color = "cornflowerblue") +
+#   coord_equal() +
+#   style_roc()
+
+#test_newdata$tree_hat
+#test_newdata$Purchase_01
+
+# test_newdata <- test_newdata %>%
+#     mutate(tree_hat = predict(tree1, newdata = test_newdata, type = "class")[["X1"]],
+#            Purchase_01 = ifelse(Enroll == "X1", 1, 0))
+
+```
+
+Another ROC curve code:
+
+ROC curve for decision tree1
+```{r}
+library(pROC)
+test_newdata$pred_try <- predict(tree1, test_newdata, type = 'prob')
+
+pred_try <- predict(tree1, test_newdata, type = 'prob')
+
+plot(roc(test_newdata$Enroll, pred_try[,2]))
+
+ggplot(data = test_newdata) +
+  geom_roc(mapping = aes(m = pred_try, d = Purchase_01)) +
+  coord_equal() +
+  style_roc()
+```
+
+
+code that doesn't work:
+```{r}
+evaluation <- function(model, data, atype) {
+  cat("\nConfusion matrix:\n")
+  prediction = predict(model, data, type=atype)
+  xtab = table(prediction, data$Class)
+  print(xtab)
+  cat("\nEvaluation:\n\n")
+  accuracy = sum(prediction == data$Class)/length(data$Class)
+  precision = xtab[1,1]/sum(xtab[,1])
+  recall = xtab[1,1]/sum(xtab[1,])
+  f = 2 * (precision * recall) / (precision + recall)
+  cat(paste("Accuracy:\t", format(accuracy, digits=2), "\n",sep=" "))
+  cat(paste("Precision:\t", format(precision, digits=2), "\n",sep=" "))
+  cat(paste("Recall:\t\t", format(recall, digits=2), "\n",sep=" "))
+  cat(paste("F-measure:\t", format(f, digits=2), "\n",sep=" "))
+}
+
+val <- train_newdata %>% slice(xval_folds[[i]])
+evaluation(tree1, val, "class")
+evaluation(tree1, test_newdata, "class")
+```
+
